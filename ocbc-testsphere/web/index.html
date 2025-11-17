@@ -1,60 +1,191 @@
-
 <!doctype html>
 <html lang="en">
 <head>
   <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>OCBC TestSphere</title>
+
+  <!-- Fonts -->
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600&display=swap" rel="stylesheet">
+  <link
+    href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600&display=swap"
+    rel="stylesheet"
+  >
+
   <style>
-    :root { --bg:#0b1220; --card:#11182b; --muted:#8fa3bf; --accent:#e11d48; --ok:#16a34a; --warn:#f59e0b; }
+    :root {
+      --bg:#0b1220;
+      --card:#11182b;
+      --muted:#8fa3bf;
+      --accent:#e11d48;
+      --ok:#16a34a;
+      --warn:#f59e0b;
+    }
+
     * { box-sizing: border-box; }
-    body { margin:0; font-family: Inter, system-ui, -apple-system, Segoe UI; background:linear-gradient(180deg,#0b1220,#0b1220 40%,#0a101c); color:#e2e8f0; }
-    .container { max-width: 1100px; margin: 32px auto; padding: 0 16px; }
-    .header { display:flex; align-items:center; justify-content:space-between; margin-bottom: 16px; }
-    .title { font-size: 24px; font-weight: 600; }
-    .card { background: var(--card); border:1px solid #1f2937; border-radius: 16px; padding: 16px; box-shadow: 0 10px 30px rgba(0,0,0,.25); }
-    .grid { display:grid; grid-template-columns: 1.1fr .9fr; gap: 16px; }
+
+    body {
+      margin:0;
+      font-family: Inter, system-ui, -apple-system, Segoe UI;
+      background:linear-gradient(180deg,#0b1220,#0b1220 40%,#0a101c);
+      color:#e2e8f0;
+    }
+
+    .container {
+      max-width: 1100px;
+      margin: 32px auto;
+      padding: 0 16px;
+    }
+
+    .header {
+      display:flex;
+      align-items:center;
+      justify-content:space-between;
+      margin-bottom: 16px;
+      gap:8px;
+      flex-wrap:wrap;
+    }
+
+    .title {
+      font-size: 24px;
+      font-weight: 600;
+    }
+
+    .card {
+      background: var(--card);
+      border:1px solid #1f2937;
+      border-radius: 16px;
+      padding: 16px;
+      box-shadow: 0 10px 30px rgba(0,0,0,.25);
+    }
+
+    .grid {
+      display:grid;
+      grid-template-columns: 1.1fr .9fr;
+      gap: 16px;
+    }
+
     .muted { color: var(--muted); }
-    .row { display:flex; gap:12px; align-items:center; }
-    input[type=text]{ flex:1; padding:12px 14px; border-radius: 10px; border:1px solid #334155; background:#0b1220; color:#e2e8f0; }
-    button { background:#1f2937; color:#e2e8f0; border:1px solid #334155; padding:10px 14px; border-radius:10px; cursor:pointer; }
-    button.primary { background: #e11d48; border-color:#e11d48; }
-    .runs { margin-top:16px; display:grid; grid-template-columns: repeat(3, 1fr); gap:16px; }
-    .pill { font-size: 12px; padding:4px 8px; border-radius:999px; }
-    .pill.ok { background: rgba(22,163,74,.15); color:#34d399; }
+
+    .row {
+      display:flex;
+      gap:12px;
+      align-items:center;
+      flex-wrap:wrap;
+    }
+
+    input[type=text] {
+      flex:1;
+      padding:12px 14px;
+      border-radius: 10px;
+      border:1px solid #334155;
+      background:#0b1220;
+      color:#e2e8f0;
+    }
+
+    button {
+      background:#1f2937;
+      color:#e2e8f0;
+      border:1px solid #334155;
+      padding:10px 14px;
+      border-radius:10px;
+      cursor:pointer;
+    }
+
+    button.primary {
+      background: #e11d48;
+      border-color:#e11d48;
+    }
+
+    .runs {
+      margin-top:16px;
+      display:grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap:16px;
+    }
+
+    .pill {
+      font-size: 12px;
+      padding:4px 8px;
+      border-radius:999px;
+    }
+
+    .pill.ok   { background: rgba(22,163,74,.15);  color:#34d399; }
     .pill.warn { background: rgba(245,158,11,.15); color:#fbbf24; }
-    .pill.err { background: rgba(239,68,68,.15); color:#f87171; }
-    .screens { display:grid; grid-template-columns: repeat(3,1fr); gap:8px; margin-top:8px; }
-    img { width:100%; border-radius: 10px; border:1px solid #1f2937; background:#0b1220; }
-    .legend { display:flex; gap:8px; align-items:center; margin-top:8px; }
-    .legend b{ font-weight:600; }
-    .footer { margin-top: 24px; text-align:center; }
-    canvas { background:#0b1220; border:1px solid #1f2937; border-radius: 12px; padding:8px; }
+    .pill.err  { background: rgba(239,68,68,.15);  color:#f87171; }
+
+    .screens {
+      display:grid;
+      grid-template-columns: repeat(3,1fr);
+      gap:8px;
+      margin-top:8px;
+    }
+
+    /* keep super-tall screenshots under control */
+    .shotBox {
+      border:1px solid #1f2937;
+      border-radius: 10px;
+      background:#0b1220;
+      max-height: 320px;   /* change this if you want taller/shorter previews */
+      overflow:auto;       /* scroll inside if the page is very tall */
+    }
+
+    .shotBox img {
+      width:100%;
+      display:block;
+    }
+
+    .legend {
+      display:flex;
+      gap:8px;
+      align-items:center;
+      margin-top:8px;
+    }
+
+    .legend b { font-weight:600; }
+
+    .footer {
+      margin-top: 24px;
+      text-align:center;
+    }
+
+    canvas {
+      background:#0b1220;
+      border:1px solid #1f2937;
+      border-radius: 12px;
+      padding:8px;
+    }
+
     a.clean { color:#e2e8f0; text-decoration:none; }
     a.clean:hover { text-decoration: underline; }
-    @media (max-width: 980px){ .grid{ grid-template-columns:1fr; } .runs{ grid-template-columns:1fr; } }
+
+    @media (max-width: 980px){
+      .grid { grid-template-columns:1fr; }
+      .runs { grid-template-columns:1fr; }
+    }
   </style>
 </head>
 <body>
   <div class="container">
     <div class="header">
       <div class="title">OCBC TestSphere</div>
-      <div class="muted">Cross‑browser visual regression for OCBC web apps</div>
+      <div class="muted">Cross-browser visual regression for OCBC web apps</div>
     </div>
 
     <div class="grid">
       <div class="card">
-        <h3>Run a Cross‑Browser Test</h3>
-        <p class="muted">Enter a URL (e.g. https://www.ocbc.com/) or a path hosted by this server.</p>
+        <h3>Run a Cross-Browser Test</h3>
+        <p class="muted">
+          Enter a URL (e.g. https://www.ocbc.com/) or a path hosted by this server.
+        </p>
         <div class="row">
           <input id="url" type="text" placeholder="https://example.com/login" />
           <button class="primary" id="runBtn">Run</button>
         </div>
         <p id="runStatus" class="muted"></p>
       </div>
+
       <div class="card">
         <h3>Mismatch Trend</h3>
         <canvas id="trend" height="120"></canvas>
@@ -77,68 +208,124 @@
   <script>
     const e = React.createElement;
 
-    function statusPill(status){
-      const cls = status === 'done' ? 'pill ok' : status === 'error' ? 'pill err' : 'pill warn';
+    function statusPill(status) {
+      const cls =
+        status === 'done'  ? 'pill ok'  :
+        status === 'error' ? 'pill err' :
+                             'pill warn';
       return e('span', { className: cls }, status.toUpperCase());
     }
 
-    function RunCard({ run }){
+    function RunCard({ run }) {
       const diffs = run.diffs || {};
       const ff = diffs['firefox'];
       const wk = diffs['webkit'];
+      const profileLabel = (run.profile || 'auto-desktop').toUpperCase();
+
       return e('div', { className: 'card' },
-        e('div', { className: 'row', style: { justifyContent:'space-between' } },
+        e('div', {
+          className: 'row',
+          style: { justifyContent:'space-between', alignItems:'flex-start' }
+        },
           e('div', null,
-            e('a', { className:'clean', href:`/dashboard/run.html?id=${run.id}` },
+            e('a', {
+              className:'clean',
+              href:`/dashboard/run.html?id=${run.id}`
+            },
               e('b', null, new Date(run.createdAt).toLocaleString())
             ),
-            e('div', { className: 'muted' }, run.url)
+            e('div', { className: 'muted' },
+              run.url,
+              ' • ',
+              profileLabel
+            )
           ),
           statusPill(run.status)
         ),
         run.status === 'done' && e('div', null,
-          e('div', { className: 'legend' }, e('b', null, 'Results'),
-            e('span', { className:'muted' }, 'Chromium baseline; diffs are highlighted')
+          e('div', { className: 'legend' },
+            e('b', null, 'Results'),
+            e('span', { className:'muted' },
+              'Chromium baseline; diffs are highlighted'
+            )
           ),
           e('div', { className:'screens' },
+            // Chromium
             e('div', null,
               e('div', { className:'muted' }, 'Chromium'),
-              e('img', { src: run.results?.chromium?.screenshot })
+              e('div', { className:'shotBox' },
+                e('img', { src: run.results?.chromium?.screenshot })
+              )
             ),
+            // Firefox
             e('div', null,
-              e('div', { className:'muted' }, `Firefox diff (${ff?.mismatchPct ?? '-'}%)`),
-              ff?.diffPath ? e('img', { src: ff.diffPath }) : e('div', { className:'muted' }, 'No diff image')
+              e('div', { className:'muted' },
+                `Firefox diff (${ff?.mismatchPct ?? '-'}%)`
+              ),
+              ff?.diffPath
+                ? e('div', { className:'shotBox' },
+                    e('img', { src: ff.diffPath })
+                  )
+                : e('div', { className:'muted' }, 'No diff image')
             ),
+            // WebKit
             e('div', null,
-              e('div', { className:'muted' }, `WebKit diff (${wk?.mismatchPct ?? '-'}%)`),
-              wk?.diffPath ? e('img', { src: wk.diffPath }) : e('div', { className:'muted' }, 'No diff image')
+              e('div', { className:'muted' },
+                `WebKit diff (${wk?.mismatchPct ?? '-'}%)`
+              ),
+              wk?.diffPath
+                ? e('div', { className:'shotBox' },
+                    e('img', { src: wk.diffPath })
+                  )
+                : e('div', { className:'muted' }, 'No diff image')
             )
           )
         )
       );
     }
 
-    function App(){
-      const [runs, setRuns] = React.useState([]);
-      let chartRef = React.useRef(null);
+    // Client info for auto desktop / mobile on backend
+    function getClientInfo() {
+      return {
+        width: window.innerWidth,
+        height: window.innerHeight,
+        dpr: window.devicePixelRatio || 1,
+        ua: navigator.userAgent,
+        isMobile: /Mobi|Android|iPhone|iPad|iPod/i.test(navigator.userAgent)
+      };
+    }
 
-      async function fetchRuns(){
+    function App() {
+      const [runs, setRuns] = React.useState([]);
+
+      async function fetchRuns() {
         const res = await fetch('/api/runs');
         const data = await res.json();
         setRuns(data);
         drawTrend(data);
       }
 
-      function drawTrend(data){
+      function drawTrend(data) {
         const canvas = document.getElementById('trend');
         if (!canvas) return;
+
         const existing = Chart.getChart(canvas);
         if (existing) existing.destroy();
 
-        const labels = data.map(r => new Date(r.createdAt).toLocaleTimeString()).reverse();
-        const ff = data.map(r => r.diffs?.firefox?.mismatchPct ?? 0).reverse();
-        const wk = data.map(r => r.diffs?.webkit?.mismatchPct ?? 0).reverse();
+        const labels = data
+          .map(r => new Date(r.createdAt).toLocaleTimeString())
+          .reverse();
+
+        const ff = data
+          .map(r => r.diffs?.firefox?.mismatchPct ?? 0)
+          .reverse();
+
+        const wk = data
+          .map(r => r.diffs?.webkit?.mismatchPct ?? 0)
+          .reverse();
+
         const ctx = canvas.getContext('2d');
+
         new Chart(ctx, {
           type: 'line',
           data: {
@@ -151,42 +338,79 @@
           options: {
             responsive: true,
             interaction: { mode: 'index', intersect: false },
-            plugins: { legend: { labels: { color: '#e2e8f0' } } },
+            plugins: {
+              legend: {
+                labels: { color: '#e2e8f0' }
+              }
+            },
             scales: {
-              x: { ticks: { color: '#94a3b8' }, grid: { color: '#1f2937' } },
-              y: { ticks: { color: '#94a3b8' }, grid: { color: '#1f2937' }, beginAtZero:true }
+              x: {
+                ticks: { color: '#94a3b8' },
+                grid:  { color: '#1f2937' }
+              },
+              y: {
+                ticks: { color: '#94a3b8' },
+                grid:  { color: '#1f2937' },
+                beginAtZero:true
+              }
             }
           }
         });
       }
 
-      async function triggerRun(){
-        const url = document.getElementById('url').value.trim();
-        const status = document.getElementById('runStatus');
+      async function triggerRun() {
+        const urlInput = document.getElementById('url');
+        const status   = document.getElementById('runStatus');
+        const url = urlInput.value.trim();
+
+        if (!url) {
+          status.textContent = 'Please enter a URL.';
+          return;
+        }
+
+        const client = getClientInfo();
+
         status.textContent = 'Starting…';
+
         const res = await fetch('/api/run', {
-          method:'POST', headers: { 'Content-Type':'application/json' }, body: JSON.stringify({ url })
+          method:'POST',
+          headers: { 'Content-Type':'application/json' },
+          body: JSON.stringify({ url, client })
         });
+
         const data = await res.json();
-        if (!res.ok){ status.textContent = 'Error: ' + (data.error || 'Failed'); return; }
+
+        if (!res.ok) {
+          status.textContent = 'Error: ' + (data.error || 'Failed');
+          return;
+        }
+
         status.textContent = 'Running… refresh in a few seconds.';
         setTimeout(fetchRuns, 3000);
       }
 
       React.useEffect(() => {
         fetchRuns();
+
         const int = setInterval(fetchRuns, 5000);
         const btn = document.getElementById('runBtn');
+
         btn.addEventListener('click', triggerRun);
-        return () => { clearInterval(int); btn.removeEventListener('click', triggerRun); };
+
+        return () => {
+          clearInterval(int);
+          btn.removeEventListener('click', triggerRun);
+        };
       }, []);
 
       return e(React.Fragment, null,
-        e('div', { id: 'runs', className:'runs' }, runs.map(r => e(RunCard, { run: r, key: r.id })))
+        e('div', { id: 'runs', className:'runs' },
+          runs.map(r => e(RunCard, { run: r, key: r.id }))
+        )
       );
     }
 
-    (function mount(){
+    (function mount() {
       const container = document.createElement('div');
       document.body.appendChild(container);
       const root = ReactDOM.createRoot(container);

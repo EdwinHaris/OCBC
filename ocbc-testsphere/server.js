@@ -14,7 +14,8 @@ const RUNS_DIR = path.join(__dirname, 'runs');
 if (!fs.existsSync(RUNS_DIR)) fs.mkdirSync(RUNS_DIR);
 
 const state = {
-  runs: {} // runId -> { id, url, status, createdAt, results: { [browser]: { screenshot, ok } }, diffs: { [browser]: { against, diffPath, mismatchPct } } }
+  // runId -> { id, url, status, createdAt, profile, client, results, diffs }
+  runs: {}
 };
 
 // Serve dashboard
@@ -24,7 +25,7 @@ app.use('/artifacts', express.static(RUNS_DIR));
 
 // API: list runs (newest first)
 app.get('/api/runs', (req, res) => {
-  const arr = Object.values(state.runs).sort((a,b) => b.createdAt - a.createdAt);
+  const arr = Object.values(state.runs).sort((a, b) => b.createdAt - a.createdAt);
   res.json(arr);
 });
 
@@ -39,8 +40,18 @@ app.get('/api/run/:id', (req, res) => {
 app.post('/api/run', async (req, res) => {
   const url = (req.body && req.body.url) || '';
   if (!/^https?:\/\//i.test(url) && !/^\//.test(url)) {
-    return res.status(400).json({ error: 'Provide a valid http(s) URL (or a path served by this server).' });
+    return res
+      .status(400)
+      .json({ error: 'Provide a valid http(s) URL (or a path served by this server).' });
   }
+
+  // Auto-detect viewport & device from client info
+  const client = req.body && req.body.client;
+  const isMobile = !!(client && client.isMobile);
+  const width = client && client.width ? Math.round(client.width) : 1280;
+  const height = client && client.height ? Math.round(client.height) : 800;
+  const deviceScaleFactor = client && client.dpr ? client.dpr : 1;
+  const userAgent = client && client.ua ? client.ua : undefined;
 
   const id = uuidv4();
   const run = {
@@ -50,9 +61,12 @@ app.post('/api/run', async (req, res) => {
     createdAt: Date.now(),
     results: {},
     diffs: {},
-    note: 'Baseline: chromium. Diff: firefox & webkit vs chromium.'
+    note: 'Baseline: chromium. Diff: firefox & webkit vs chromium.',
+    profile: isMobile ? 'auto-mobile' : 'auto-desktop',
+    client
   };
   state.runs[id] = run;
+
   res.json({ id, status: run.status });
 
   // fire and forget
@@ -67,39 +81,111 @@ app.post('/api/run', async (req, res) => {
       { name: 'webkit', launcher: webkit }
     ];
 
-    const viewport = { width: 1280, height: 800 };
+    const viewport = { width, height };
+
     // Take screenshots per browser
     for (const t of targets) {
       const browser = await t.launcher.launch();
-      const ctx = await browser.newContext({ viewport });
+
+      // Build context options per browser
+      const contextOptions = {
+        viewport,
+        deviceScaleFactor,
+        userAgent
+      };
+
+      // Only Chromium/WebKit support isMobile – skip for Firefox
+      if (isMobile && (t.name === 'chromium' || t.name === 'webkit')) {
+        contextOptions.isMobile = true;
+      }
+
+      const ctx = await browser.newContext(contextOptions);
       const page = await ctx.newPage();
+
       await page.goto(url, { waitUntil: 'networkidle', timeout: 60000 });
-      // small settle wait for animations
-      await page.waitForTimeout(500);
+      await page.waitForTimeout(500); // settle animations
+
       const outPath = path.join(dir, `${t.name}.png`);
+
+      // Timestamp badge (bottom-right)
+      const ts = new Date().toLocaleString('en-SG', {
+        hour12: false,
+        timeZone: 'Asia/Singapore'
+      });
+
+      await page.addStyleTag({
+        content: `
+          #__ts_badge__ {
+            position: fixed; right: 10px; bottom: 10px;
+            padding: 4px 8px; border-radius: 6px;
+            background: rgba(0,0,0,.6); color: #fff;
+            font: 12px/1.2 -apple-system,BlinkMacSystemFont,Segoe UI,Inter,Roboto,Helvetica,Arial,sans-serif;
+            z-index: 2147483647; pointer-events: none;
+          }`
+      });
+
+      await page.evaluate((text) => {
+        const el = document.createElement('div');
+        el.id = '__ts_badge__';
+        el.textContent = `📅 ${text}`;
+        document.body.appendChild(el);
+      }, ts);
+
+      // IMPORTANT: viewport-only screenshot (no fullPage)
       await page.screenshot({ path: outPath, fullPage: true });
+
+
+      // Clean up badge
+      await page.evaluate(() => {
+        const el = document.getElementById('__ts_badge__');
+        if (el) el.remove();
+      });
+
       await browser.close();
       run.results[t.name] = { screenshot: `/artifacts/${id}/${t.name}.png`, ok: true };
     }
 
-    // Diff firefox and webkit against chromium
+        // Diff firefox and webkit against chromium
     const baseline = PNG.sync.read(fs.readFileSync(path.join(dir, 'chromium.png')));
-    const baselineArea = baseline.width * baseline.height;
+
     for (const target of ['firefox', 'webkit']) {
       const targetPng = PNG.sync.read(fs.readFileSync(path.join(dir, `${target}.png`)));
-      const { width, height } = baseline;
-      // Resize mismatch guard
-      if (targetPng.width !== width || targetPng.height !== height) {
-        run.diffs[target] = { against: 'chromium', diffPath: null, mismatchPct: 100, note: 'Size differs' };
-        continue;
-        }
+
+      // Use the overlapping area between baseline and target
+      const width = Math.min(baseline.width, targetPng.width);
+      const height = Math.min(baseline.height, targetPng.height);
+      const area = width * height;
+
+      // Crop both images to the common region so sizes never break the diff
+      const baselineCrop = new PNG({ width, height });
+      const targetCrop = new PNG({ width, height });
+
+      PNG.bitblt(baseline, baselineCrop, 0, 0, width, height, 0, 0);
+      PNG.bitblt(targetPng, targetCrop, 0, 0, width, height, 0, 0);
+
       const diff = new PNG({ width, height });
-      const mismatched = pixelmatch(baseline.data, targetPng.data, diff.data, width, height, { threshold: 0.1 });
+
+      const mismatched = pixelmatch(
+        baselineCrop.data,
+        targetCrop.data,
+        diff.data,
+        width,
+        height,
+        { threshold: 0.1 }
+      );
+
       const diffPath = path.join(dir, `${target}-vs-chromium-diff.png`);
       fs.writeFileSync(diffPath, PNG.sync.write(diff));
-      const mismatchPct = Math.round((mismatched / baselineArea) * 10000) / 100; // 2 dp
-      run.diffs[target] = { against: 'chromium', diffPath: `/artifacts/${id}/${target}-vs-chromium-diff.png`, mismatchPct };
+
+      const mismatchPct = Math.round((mismatched / area) * 10000) / 100; // 2 dp
+
+      run.diffs[target] = {
+        against: 'chromium',
+        diffPath: `/artifacts/${id}/${target}-vs-chromium-diff.png`,
+        mismatchPct
+      };
     }
+
 
     run.status = 'done';
   } catch (e) {
