@@ -77,8 +77,8 @@ jobs:
       - name: Trigger Railway TestSphere CI run
         env:
           # Public URL of your deployed TestSphere on Railway
-          TESTSPHERE_BASE: "https://ocbc.up.railway.app"
+          TESTSPHERE_BASE: "https://ocbc-main-production.up.railway.app"
           # Page to test (hosted by the same Railway service)
-          TARGET_URL: "https://ocbc.up.railway.app/ocbc-demo/"
+          TARGET_URL: "https://ocbc-main-production.up.railway.app/ocbc-demo/"
         # ci:run is "node ci-run.js" in your package.json
         run: npm run ci:run
