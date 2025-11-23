@@ -15,7 +15,7 @@ WORKDIR /app
 
 # Install backend dependencies
 COPY package*.json ./
-RUN npm ci
+RUN npm install
 
 # Copy everything else (server.js, ocbc-demo, web, etc.)
 COPY . .
