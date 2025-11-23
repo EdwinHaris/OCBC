@@ -1,0 +1,4 @@
+# Ignore TestSphere dependencies and artifacts
+ocbc-testsphere/node_modules/
+ocbc-testsphere/runs/
+ocbc-testsphere/server.log

@@ -1,0 +1,28 @@
+{
+  "name": "ocbc-testsphere",
+  "version": "1.0.0",
+  "private": true,
+  "description": "Unified web platform to automate and visualize cross‑browser compatibility for OCBC apps.",
+  "scripts": {
+    "start": "node server.js",
+    "dev": "node server.js",
+    "format": "prettier --write .",
+    "test:install": "npx playwright install --with-deps",
+    "postinstall": "npx playwright install --with-deps",
+    "ci:run": "node ci-run.js",
+    "watch:demo": "nodemon --watch ocbc-demo --ext html,css,js --exec \"node ci-run.js\""
+  },
+  "dependencies": {
+    "express": "^4.19.2",
+    "node-fetch": "^3.3.2",
+    "pixelmatch": "^5.3.0",
+    "playwright": "^1.47.0",
+    "pngjs": "^7.0.0",
+    "uuid": "^9.0.1"
+  },
+  "devDependencies": {
+    "nodemon": "^3.1.10",
+    "prettier": "^3.3.3",
+    "wait-on": "^9.0.3"
+  }
+}

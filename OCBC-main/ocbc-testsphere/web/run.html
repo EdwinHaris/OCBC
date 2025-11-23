@@ -1,0 +1,183 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Run Details — OCBC TestSphere</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600&display=swap" rel="stylesheet">
+  <style>
+    :root { --bg:#0b1220; --card:#11182b; --muted:#8fa3bf; --accent:#e11d48; --ok:#16a34a; --warn:#f59e0b; }
+    *{ box-sizing: border-box; }
+    body { margin:0; font-family: Inter, system-ui, -apple-system, Segoe UI; background:linear-gradient(180deg,#0b1220,#0b1220 40%,#0a101c); color:#e2e8f0; }
+    .container { max-width: 1200px; margin: 24px auto; padding: 0 16px; }
+    a { color:#e2e8f0; text-decoration:none; }
+    a:hover { text-decoration: underline; }
+    .title { display:flex; align-items:center; justify-content:space-between; gap:12px; }
+    .card { background: var(--card); border:1px solid #1f2937; border-radius: 16px; padding: 16px; box-shadow: 0 10px 30px rgba(0,0,0,.25); }
+    .muted { color: var(--muted); }
+    .grid { display:grid; grid-template-columns: repeat(3, 1fr); gap:16px; margin-top: 16px; }
+    .imgwrap { border:1px solid #1f2937; border-radius:12px; background:#0b1220; padding:8px; overflow:auto; max-height: 75vh; }
+    img { width:100%; height:auto; display:block; border-radius:8px; cursor: zoom-in; }
+    .toolbar { display:flex; align-items:center; gap:10px; margin:8px 0 4px; }
+    input[type=range] { width: 160px; }
+    .pill { font-size: 12px; padding:4px 8px; border-radius:999px; }
+    .pill.ok { background: rgba(22,163,74,.15); color:#34d399; }
+    .pill.warn { background: rgba(245,158,11,.15); color:#f59e0b; }
+    .pill.err { background: rgba(239,68,68,.15); color:#f87171; }
+    @media (max-width: 980px){ .grid{ grid-template-columns:1fr; } }
+
+    /* Lightbox overlay for enlarged screenshots */
+    .lightbox {
+      position: fixed;
+      inset: 0;
+      background: rgba(0,0,0,0.85);
+      display: none;
+      justify-content: center;
+      align-items: center;
+      z-index: 9999;
+    }
+    .lightbox img {
+      max-width: 95vw;
+      max-height: 95vh;
+      border-radius: 12px;
+      box-shadow: 0 20px 40px rgba(0,0,0,.6);
+      cursor: zoom-out;
+      background: #020617;
+    }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <div class="title">
+      <div>
+        <a href="/dashboard">← Back to Dashboard</a>
+        <h2 id="runTitle" style="margin:6px 0 0 0;">Run Details</h2>
+        <div id="runMeta" class="muted"></div>
+      </div>
+      <div id="statusPill" class="pill"></div>
+    </div>
+
+    <div class="card">
+      <div class="toolbar">
+        <span class="muted">Zoom:</span>
+        <input id="zoom" type="range" min="50" max="200" value="100"/>
+        <span id="zoomVal" class="muted">100%</span>
+      </div>
+      <div class="grid" id="panels">
+        <!-- panels injected -->
+      </div>
+    </div>
+  </div>
+
+  <!-- Lightbox for enlarged screenshots -->
+  <div id="lightbox" class="lightbox" onclick="closeLightbox(event)">
+    <img id="lightbox-img" src="" alt="Screenshot" />
+  </div>
+
+  <script>
+    // Shared lightbox helpers
+    function openLightbox(src) {
+      if (!src) return;
+      const box = document.getElementById('lightbox');
+      const img = document.getElementById('lightbox-img');
+      img.src = src;
+      box.style.display = 'flex';
+    }
+
+    function closeLightbox(event) {
+      if (event.target.id === 'lightbox' || event.target.id === 'lightbox-img') {
+        const box = document.getElementById('lightbox');
+        const img = document.getElementById('lightbox-img');
+        img.src = '';
+        box.style.display = 'none';
+      }
+    }
+
+    function getId(){ const u = new URL(location.href); return u.searchParams.get('id'); }
+    function badge(el, status){
+      el.className = 'pill ' + (status === 'done' ? 'ok' : status === 'error' ? 'err' : 'warn');
+      el.textContent = status.toUpperCase();
+    }
+
+    function panelTemplate(title, imgSrc, extra=''){
+      const safeSrc = imgSrc || '';
+      if (!safeSrc) {
+        return `
+          <div>
+            <div class="muted" style="margin-bottom:6px;"><b>${title}</b> ${extra}</div>
+            <div class="imgwrap">
+              <div class="muted">No image available</div>
+            </div>
+          </div>
+        `;
+      }
+      return `
+        <div>
+          <div class="muted" style="margin-bottom:6px;"><b>${title}</b> ${extra}</div>
+          <div class="imgwrap">
+            <img src="${safeSrc}" onclick="openLightbox('${safeSrc}')" />
+          </div>
+          <div class="muted" style="margin-top:6px;">
+            <a href="${safeSrc}" download>Download</a> · <a href="${safeSrc}" target="_blank">Open</a>
+          </div>
+        </div>
+      `;
+    }
+
+    async function main(){
+      const id = getId();
+      if (!id){ document.getElementById('runTitle').textContent = 'Run not found'; return; }
+
+      const res = await fetch('/api/run/' + id);
+      const run = await res.json();
+
+      document.getElementById('runTitle').textContent = new Date(run.createdAt).toLocaleString();
+      document.getElementById('runMeta').textContent =
+        run.url + ' • Baseline: Chromium • Before/After login • Diff: Firefox/WebKit';
+
+      badge(document.getElementById('statusPill'), run.status);
+
+      const panels = document.getElementById('panels');
+      const r = run.results || {};
+      const d = run.diffs || {};
+
+      panels.innerHTML = [
+        // 1–6: BEFORE + AFTER for each browser
+        panelTemplate('Chromium — BEFORE login', r.chromium?.screenshotBefore || ''),
+        panelTemplate('Chromium — AFTER login',  r.chromium?.screenshotAfter  || r.chromium?.screenshot || ''),
+        panelTemplate('Firefox — BEFORE login',  r.firefox?.screenshotBefore  || ''),
+        panelTemplate('Firefox — AFTER login',   r.firefox?.screenshotAfter   || r.firefox?.screenshot || ''),
+        panelTemplate('WebKit — BEFORE login',   r.webkit?.screenshotBefore   || ''),
+        panelTemplate('WebKit — AFTER login',    r.webkit?.screenshotAfter    || r.webkit?.screenshot || ''),
+
+        // 7–8: Diff images
+        panelTemplate(
+          'Firefox vs Chromium (diff)',
+          d.firefox?.diffPath || '',
+          `(${d.firefox?.mismatchPct ?? '-'}%)`
+        ),
+        panelTemplate(
+          'WebKit vs Chromium (diff)',
+          d.webkit?.diffPath || '',
+          `(${d.webkit?.mismatchPct ?? '-'}%)`
+        )
+      ].join('');
+
+      const zoom = document.getElementById('zoom');
+      const zoomVal = document.getElementById('zoomVal');
+      function applyZoom(){
+        const v = zoom.value;
+        zoomVal.textContent = v + '%';
+        document.querySelectorAll('.imgwrap img').forEach(img => {
+          img.style.width = v + '%';
+        });
+      }
+      zoom.addEventListener('input', applyZoom);
+      applyZoom();
+    }
+    main();
+  </script>
+</body>
+</html>

@@ -1,0 +1,84 @@
+# name: Auto Cross-Browser Test
+
+# on:
+#   push:
+#     paths:
+#       - "ocbc-testsphere/**"                  # watch the whole TestSphere project
+#       - ".github/workflows/auto-testsphere.yml"
+#     branches:
+#       - main
+
+# jobs:
+#   visual-test:
+#     runs-on: ubuntu-latest
+#     timeout-minutes: 20
+
+#     # all `run:` commands execute inside ocbc-testsphere
+#     defaults:
+#       run:
+#         working-directory: ocbc-testsphere
+
+#     steps:
+#       - name: Checkout repository
+#         uses: actions/checkout@v4
+
+#       - name: Setup Node.js
+#         uses: actions/setup-node@v4
+#         with:
+#           node-version: 20
+
+#       - name: Install dependencies
+#         run: npm ci
+
+#       - name: Trigger Render TestSphere run
+#         env:
+#           # Public URL of your deployed TestSphere on Render
+#           TESTSPHERE_BASE: "https://ocbc-fyui.onrender.com"
+#           # Page to test (hosted by the same Render service)
+#           TARGET_URL: "https://ocbc-fyui.onrender.com/ocbc-demo/"
+#           # Shared secret – comes from GitHub Actions secret
+#           TESTSPHERE_TOKEN: ${{ secrets.TESTSPHERE_TOKEN }}
+#         run: node ci-run.js
+
+
+
+name: Auto Cross-Browser Test
+
+on:
+  push:
+    branches:
+      - main
+    paths:
+      - "ocbc-testsphere/**"
+      - ".github/workflows/auto-testsphere.yml"
+
+jobs:
+  visual-test:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+
+    # all `run:` commands execute inside ocbc-testsphere
+    defaults:
+      run:
+        working-directory: ocbc-testsphere
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 20
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Trigger Railway TestSphere CI run
+        env:
+          # Public URL of your deployed TestSphere on Railway
+          TESTSPHERE_BASE: "https://ocbc.up.railway.app"
+          # Page to test (hosted by the same Railway service)
+          TARGET_URL: "https://ocbc.up.railway.app/ocbc-demo/"
+        # ci:run is "node ci-run.js" in your package.json
+        run: npm run ci:run
